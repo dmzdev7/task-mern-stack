@@ -1,31 +1,21 @@
 import { Router } from 'express';
-import { authRequired } from '../middleware/validateToken.js';
+import { auth } from '../middleware/auth.middleware.js';
 import {
-	createTasks,
-	deleteTasks,
+	createTask,
+	deleteTask,
 	getTask,
 	getTasks,
-	updateTasks,
+	updateTask,
 } from '../controllers/tasks.controller.js';
 import { validateSchema } from '../middleware/validator.middleware.js';
 import { createTaskSchema, updateTaskSchema } from '../schemas/task.schema.js';
 
 const router = Router();
 
-router.get('/tasks', authRequired, getTasks);
-router.get('/tasks/:id', authRequired, getTask);
-router.post(
-	'/tasks',
-	authRequired,
-	validateSchema(createTaskSchema),
-	createTasks
-);
-router.put(
-	'/tasks/:id',
-	authRequired,
-	validateSchema(updateTaskSchema),
-	updateTasks
-);
-router.delete('/tasks/:id', authRequired, deleteTasks);
+router.get('/tasks', auth, getTasks);
+router.get('/tasks/:id', auth, getTask);
+router.post('/tasks', auth, validateSchema(createTaskSchema), createTask);
+router.put('/tasks/:id', auth, validateSchema(updateTaskSchema), updateTask);
+router.delete('/tasks/:id', auth, deleteTask);
 
 export default router;
