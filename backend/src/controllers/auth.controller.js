@@ -3,63 +3,84 @@ import bcrypt from 'bcrypt';
 import { createAccessToken } from '../libs/jwt.js';
 
 export const register = async (req, res) => {
-	const { email, password, username } = req.body;
-
 	try {
+		const { username, email, password } = req.body;
+
+		const userFound = await User.findOne({ email });
+
+		if (userFound)
+			return res.status(400).json({
+				message: ['The email is already in use'],
+			});
+
+		// hashing the password
 		const passwordHash = await bcrypt.hash(password, 10);
 
+		// creating the user
 		const newUser = new User({
 			username,
 			email,
 			password: passwordHash,
 		});
 
+		// saving the user in the database
 		const userSaved = await newUser.save();
-		const token = await createAccessToken({ id: userSaved._id });
+
+		// create access token
+		const token = await createAccessToken({
+			id: userSaved._id,
+		});
 
 		res.cookie('token', token);
+
 		res.json({
 			id: userSaved._id,
 			username: userSaved.username,
 			email: userSaved.email,
-			created_at: userSaved.createdAt,
-			updated_at: userSaved.updatedAt,
 		});
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+		res.status(500).json({ message: error.message });
 	}
 };
 
 export const login = async (req, res) => {
-	const { email, password } = req.body;
-
 	try {
+		const { email, password } = req.body;
 		const userFound = await User.findOne({ email });
 
-		if (!userFound) return res.status(400).json({ message: 'User not found' });
+		if (!userFound)
+			return res.status(400).json({
+				message: ['The email does not exist'],
+			});
 
 		const isMatch = await bcrypt.compare(password, userFound.password);
+		if (!isMatch) {
+			return res.status(400).json({
+				message: ['The password is incorrect'],
+			});
+		}
 
-		if (!isMatch)
-			return res.status(400).json({ message: 'Incorrect password' });
-
-		const token = await createAccessToken({ id: userFound._id });
+		const token = await createAccessToken({
+			id: userFound._id,
+			username: userFound.username,
+		});
 
 		res.cookie('token', token);
+
 		res.json({
 			id: userFound._id,
 			username: userFound.username,
 			email: userFound.email,
-			created_at: userFound.createdAt,
-			updated_at: userFound.updatedAt,
 		});
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+		return res.status(500).json({ message: error.message });
 	}
 };
 
-export const logout = (req, res) => {
-	res.cookie('token', '', { expires: new Date(0) });
+export const logout = async (req, res) => {
+	res.cookie('token', '', {
+		expires: new Date(0),
+	});
 	return res.sendStatus(200);
 };
 
