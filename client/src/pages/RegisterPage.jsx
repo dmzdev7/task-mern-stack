@@ -1,40 +1,81 @@
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Card } from '../components/ui/Card';
+import { Label } from '../components/ui/Label';
 
 const RegisterPage = () => {
-	const { register, handleSubmit } = useForm();
-	const { signup, user } = useAuth();
+	const { signup, errors: registerErrors, isAuthenticated } = useAuth();
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm();
 
-	console.log(user);
+	const navigate = useNavigate();
 
-	const onSubmit = handleSubmit(async (values) => {
-		signup(values);
-	});
+	const onSubmit = async (value) => {
+		await signup(value);
+	};
+
+	useEffect(() => {
+		if (isAuthenticated) navigate('/tasks');
+	}, [isAuthenticated]);
 
 	return (
-		<div className="bg-zinc-800 max-w-md p-10 rounded-md">
-			<form onSubmit={onSubmit}>
-				<input
-					type="text"
-					{...register('username', { required: true })}
-					className="w-full bg-zinc-700 text-white px-4 py-2 rounded-md my-2"
-					placeholder="Username"
-				/>
-				<input
-					type="email"
-					{...register('email', { required: true })}
-					className="w-full bg-zinc-700 text-white px-4 py-2 rounded-md my-2"
-					placeholder="Email"
-				/>
-				<input
-					type="password"
-					{...register('password', { required: true })}
-					className="w-full bg-zinc-700 text-white px-4 py-2 rounded-md my-2"
-					placeholder="Password"
-				/>
+		<div className="h-[calc(100vh-100px)] flex items-center justify-center">
+			<Card>
+				{registerErrors.map((error, i) => (
+					<p
+						className="text-slate-200 bg-red-500 py-2 px-3 text-sm rounded-sm mb-1"
+						key={i}
+					>
+						{error}
+					</p>
+				))}
+				<h1 className="text-3xl font-bold">Register</h1>
+				<form onSubmit={handleSubmit(onSubmit)}>
+					<Label htmlFor="username">Username:</Label>
+					<input
+						type="text"
+						name="username"
+						placeholder="Write your name"
+						{...register('username')}
+						autoFocus
+					/>
+					{errors.username && (
+						<p className="text-red-500">Username is required</p>
+					)}
 
-				<button type="submit">Register</button>
-			</form>
+					<Label htmlFor="email">Email:</Label>
+					<input
+						name="email"
+						placeholder="youremail@domain.tld"
+						{...register('email')}
+					/>
+					{errors.email && <p className="text-red-500">Email is required</p>}
+
+					<input
+						type="password"
+						name="password"
+						placeholder="********"
+						{...register('password')}
+					/>
+					{errors.password && (
+						<p className="text-red-500">Password is required</p>
+					)}
+
+					<button type="submit">Register</button>
+					
+					<p>
+						Already Have an Account?
+						<Link className="text-sky-500" to="/login">
+							Login
+						</Link>
+					</p>
+				</form>
+			</Card>
 		</div>
 	);
 };
